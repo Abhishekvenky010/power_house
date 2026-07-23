@@ -1,13 +1,16 @@
 use anchor_lang::prelude::*;
 
-declare_id!("GGHk4XYCLfv6cpe26drrGKuhV2cdHToWPTDgLZnTfFuz");
-
 pub mod instructions;
 pub mod state;
 
+use instructions::*;
+
+declare_id!("GGHk4XYCLfv6cpe26drrGKuhV2cdHToWPTDgLZnTfFuz");
+
+
 #[program]
 pub mod my_dex {
-    use crate::instructions::initialize_market::InitializeMarket;
+
     use super::*;
 
     pub fn initialize_market(
@@ -17,6 +20,7 @@ pub mod my_dex {
         maker_fees_bps: u64,
         taker_fees_bps: u64,
     ) -> Result<()> {
+
         instructions::initialize_market::handler(
             ctx,
             base_lot_size,
