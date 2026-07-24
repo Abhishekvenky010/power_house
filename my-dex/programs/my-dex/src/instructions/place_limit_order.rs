@@ -1,0 +1,135 @@
+use anchor_lang::prelude::*;
+use anchor_spl::token::{Token, TokenAccount};
+
+use crate::state::{Market, Slab};
+
+
+#[derive(Accounts)]
+pub struct PlaceLimitOrder<'info> {
+
+    // Main market configuration
+    #[account(mut)]
+    pub market: Account<'info, Market>,
+
+
+    // Orderbook storage
+    #[account(mut)]
+    pub bids: Account<'info, Slab>,
+
+    #[account(mut)]
+    pub asks: Account<'info, Slab>,
+
+
+    // Trader placing the order
+    #[account(mut)]
+    pub owner: Signer<'info>,
+
+
+    // User token accounts
+    #[account(mut)]
+    pub user_base_vault: Account<'info, TokenAccount>,
+
+    #[account(mut)]
+    pub user_quote_vault: Account<'info, TokenAccount>,
+
+
+    // Market escrow vaults
+    #[account(mut)]
+    pub base_vault: Account<'info, TokenAccount>,
+
+    #[account(mut)]
+    pub quote_vault: Account<'info, TokenAccount>,
+
+
+    // SPL Token program for transfers
+    pub token_program: Program<'info, Token>,
+}
+pub fn handler(
+    ctx: Context<PlaceLimitOrder>,
+    max_base_size: u64,
+    client_order_id: u64,
+    price: u64,
+    order_type: OrderType,
+    side: Side,
+) -> Result<()> {
+   let market = &mut ctx.accounts.market;
+    let owner = &mut ctx.accounts.owner;
+
+    let asks = &mut ctx.accounts.asks;
+    let bids = &mut ctx.accounts.bids;
+
+    require!(
+    market.market_status == 1,
+    MarketError::MarketActiveError
+);
+    require!(
+    max_base_size >= market.base_lot_size,
+    MarketError::MarketOrderSizeError
+    );
+    let base_lot_size = market.base_lot_size;
+    let quote_lot_size = market.quote_lot_size;
+    let market_key = market.key();
+    let order_id = get_next_order_id(market)?;
+    let base_lot_size = market.base_lot_size;
+
+    let base_lots = max_base_size / base_lot_size;
+
+    let quote_lots = price
+        .checked_div(quote_lot_size)
+        .ok_or(MarketError::UnderFlow)?;
+
+     match side {
+        Side::Bid => lock_bid_funds(
+            market,
+            &owner,
+            &ctx.accounts.user_base_vault,
+            &ctx.accounts.user_quote_vault,
+            &ctx.accounts.quote_vault,
+            &ctx.accounts.token_program,
+            quote_lots,
+            base_lots,
+        )?,
+        Side::Ask => lock_ask_funds(
+            market,
+            &owner,
+            &ctx.accounts.user_base_vault,
+            &ctx.accounts.base_vault,
+            &ctx.accounts.token_program,
+            base_lots,
+        )?,
+    };
+  
+  dispatch_event(
+    market,
+    EventParams::non_fill(
+        EventType::Place,
+        order_id,
+        owner.key(),
+        side,
+        quote_lots,
+        base_lots,
+        client_order_id,
+        market_key,
+    ),
+)?;
+
+let (opposite_slab, same_slab) = match side {
+    Side::Ask => (bids, asks),
+    Side::Bid => (asks, bids),
+};
+ let fills = try_match(side, base_lots, quote_lots, opposite_slab)?;
+    if fills.is_empty() {
+        same_slab.insert_order(
+            order_id,
+            &order_type,
+            base_lots,
+            owner.key(),
+            quote_lots,
+            OrderStatus::Open,
+            client_order_id,
+            &market_key,
+            side,
+        )?;
+    }
+
+} 
