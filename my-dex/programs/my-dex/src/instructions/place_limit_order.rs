@@ -131,5 +131,41 @@ let (opposite_slab, same_slab) = match side {
             side,
         )?;
     }
+   else {
+        for fill in fills.iter() {
+            let maker_entry = market.get_trader_entry(&fill.maker_owner);
+            update_trader_entry(true, side, fill, maker_entry)?;
 
+            let taker_entry = market.get_trader_entry(&owner.key());
+            update_trader_entry(false, side, fill, taker_entry)?;
+
+            dispatch_fill_event(
+                market,
+                fill,
+                order_id,
+                owner.key(),
+                client_order_id,
+                side,
+                market_key,
+            )?;
+
+            let remaining_qty = base_lots - fill.fill_qty;
+
+            if remaining_qty > 0 {
+                same_slab.insert_order(
+                    order_id,
+                    &order_type,
+                    remaining_qty,
+                    owner.key(),
+                    quote_lots,
+                    OrderStatus::PartialFill,
+                    client_order_id,
+                    &market_key,
+                    side,
+                )?;
+            }
+        }
+    }
+
+    Ok(())
 } 
