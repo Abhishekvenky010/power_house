@@ -1,0 +1,112 @@
+use crate::{
+    assets::{lock_ask_funds, lock_bid_funds},
+    error::{MarketError, OrderError},
+    helpers::{get_next_order_id, would_match_post_only},
+    *,
+};
+#[derive(Accounts)]
+pub struct PlacePostOnlyOrder<'info> {
+
+    // Market state
+    #[account(mut)]
+    pub market: Account<'info, Market>,
+
+
+    // User placing the order
+    #[account(mut)]
+    pub owner: Signer<'info>,
+
+
+    // Orderbook slabs
+    #[account(mut)]
+    pub bids: Account<'info, Slab>,
+
+    #[account(mut)]
+    pub asks: Account<'info, Slab>,
+
+
+    // User token accounts
+    #[account(mut)]
+    pub user_base_vault: Account<'info, TokenAccount>,
+
+    #[account(mut)]
+    pub user_quote_vault: Account<'info, TokenAccount>,
+
+
+    // Market vaults
+    #[account(mut)]
+    pub base_vault: Account<'info, TokenAccount>,
+
+    #[account(mut)]
+    pub quote_vault: Account<'info, TokenAccount>,
+
+
+    // SPL Token program
+    pub token_program: Program<'info, Token>,
+}
+pub fn handler(
+    ctx: Context<PlacePostOnlyOrder>,
+    base_qty: u64,
+    price: u64,
+    order_type: OrderType,
+    client_order_id: u64,
+    side: Side,
+) -> Result<()> {
+    let market = &mut ctx.accounts.market;
+
+    require!(market.market_status == 1, MarketError::MarketActiveError);
+    require!(
+        order_type == OrderType::PostOnly,
+        OrderError::InvalidOrderType
+    );
+
+    let order_id = get_next_order_id(market)?;
+    let base_lots = base_qty / market.base_lot_size;
+    let quote_lots = price
+        .checked_div(market.quote_lot_size)
+        .ok_or(MarketError::MathOverflow)?;
+
+    if would_match_post_only(side, quote_lots, &ctx.accounts.asks, &ctx.accounts.bids) {
+        return Err(OrderError::WouldMatchImmediately.into());
+    }
+
+    match side {
+        Side::Bid => lock_bid_funds(
+            market,
+            &ctx.accounts.owner,
+            &ctx.accounts.user_base_vault,
+            &ctx.accounts.user_quote_vault,
+            &ctx.accounts.quote_vault,
+            &ctx.accounts.token_program,
+            quote_lots,
+            base_lots,
+        )?,
+        Side::Ask => lock_ask_funds(
+            market,
+            &ctx.accounts.owner,
+            &ctx.accounts.user_base_vault,
+            &ctx.accounts.base_vault,
+            &ctx.accounts.token_program,
+            base_lots,
+        )?,
+    };
+
+    let slab = match side {
+        Side::Ask => &mut ctx.accounts.asks,
+        Side::Bid => &mut ctx.accounts.bids,
+    };
+
+    slab.insert_order(
+        order_id,
+        &order_type,
+        base_lots,
+        ctx.accounts.owner.key(),
+        quote_lots,
+        OrderStatus::Open,
+        client_order_id,
+        &market.key(),
+        side,
+    )?;
+
+    Ok(())
+}
