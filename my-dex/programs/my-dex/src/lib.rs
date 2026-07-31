@@ -13,6 +13,7 @@ pub mod instructions;
 pub mod state;
 pub mod states;
 use state::*;
+use instructions::*;
 
 #[program]
 pub mod orderbook {

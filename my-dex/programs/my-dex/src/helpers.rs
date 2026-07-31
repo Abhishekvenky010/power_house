@@ -4,6 +4,8 @@ use anchor_lang::prelude::*;
 
 use crate::errors::{MarketError, OrderError, SlabError, TraderEntryError};
 use crate::state::{FillRecord, Market, OrderStatus, OrderType, TraderEntry};
+use anchor_spl::token::{Token, TokenAccount};
+
 
 use crate::state::{Node, Slab};
 use crate::states::order_schema::enums::Side;
@@ -422,5 +424,32 @@ pub fn update_trader_entry(
             return err!(TraderEntryError::EntryNotFound);
         }
     }
+    Ok(())
+}
+pub fn transfer_if_needed<'info>(
+    token_program: &Program<'info, Token>,
+    from: &Account<'info, TokenAccount>,
+    to: &Account<'info, TokenAccount>,
+    authority: &UncheckedAccount<'info>,
+    signer_seeds: &[&[u8]],
+    amount: u64,
+) -> Result<()> {
+    if amount == 0 {
+        return Ok(());
+    }
+
+    anchor_spl::token::transfer(
+        CpiContext::new_with_signer(
+            token_program.to_account_info(),
+            anchor_spl::token::Transfer {
+                from: from.to_account_info(),
+                to: to.to_account_info(),
+                authority: authority.to_account_info(),
+            },
+            &[signer_seeds],
+        ),
+        amount,
+    )?;
+
     Ok(())
 }

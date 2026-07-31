@@ -170,14 +170,18 @@ pub enum ConsumeEventsError {
 
 #[error_code]
 pub enum SettlementError {
-    #[msg("Invalid base token account")]
+    #[msg("Trader not found")]
+    TraderNotFound,
+
+    #[msg("Nothing to settle")]
+    NothingToSettle,
+
+    #[msg("Math overflow")]
+    MathOverflow,
+
+    #[msg("Invalid base ATA")]
     InvalidBaseAta,
-    #[msg("Invalid quote token account")]
+
+    #[msg("Invalid quote ATA")]
     InvalidQuoteAta,
-    #[msg("No funds available to settle")]
-    NonSettleableEvent,
-    #[msg("Base token account owner mismatch")]
-    InvalidOwnerBaseAta,
-    #[msg("Quote token account owner mismatch")]
-    InvalidOwnerQuoteAta,
 }
