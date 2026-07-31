@@ -1,4 +1,5 @@
 use anchor_lang::prelude::*;
+#[repr(u8)]
 #[derive(Clone, Copy, PartialEq, Eq, InitSpace, Debug, AnchorSerialize, AnchorDeserialize)]
 pub enum Side {
     Bid,

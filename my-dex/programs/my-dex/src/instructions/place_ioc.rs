@@ -1,9 +1,19 @@
+use anchor_lang::prelude::*;
 use crate::{
     assets::{lock_ask_funds, lock_bid_funds},
-    error::{MarketError, OrderError, TraderEntryError},
+    errors::{MarketError, OrderError, TraderEntryError},
     helpers::{try_match_ioc, update_trader_entry},
-    *,
+    state::OrderType,
+    states::order_schema::enums::Side,
 };
+use crate::Market;
+use crate::Slab;
+use crate::Token;
+use crate::AnchorTokenAccount;
+
+
+
+
 #[derive(Accounts)]
 pub struct PlaceIOCOrder<'info> {
 
@@ -27,18 +37,18 @@ pub struct PlaceIOCOrder<'info> {
 
     // User token accounts
     #[account(mut)]
-    pub user_base_vault: Account<'info, TokenAccount>,
+    pub user_base_vault: Account<'info, AnchorTokenAccount>,
 
     #[account(mut)]
-    pub user_quote_vault: Account<'info, TokenAccount>,
+    pub user_quote_vault: Account<'info, AnchorTokenAccount>,
 
 
     // Market vaults
     #[account(mut)]
-    pub base_vault: Account<'info, TokenAccount>,
+    pub base_vault: Account<'info, AnchorTokenAccount>,
 
     #[account(mut)]
-    pub quote_vault: Account<'info, TokenAccount>,
+    pub quote_vault: Account<'info, AnchorTokenAccount>,
 
 
     // SPL Token program

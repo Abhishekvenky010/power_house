@@ -1,5 +1,5 @@
 use crate::{
-    error::MarketError,
+    errors::MarketError,
     state::{EventType, FillRecord, Market},
     states::order_schema::enums::Side,
 };

@@ -111,5 +111,7 @@ pub fn handler(
 
     market.quote_vault = ctx.accounts.quote_vault.key();
 
+    market.vault_signer_nonce = ctx.bumps.vault_signer;
+
     Ok(())
 }

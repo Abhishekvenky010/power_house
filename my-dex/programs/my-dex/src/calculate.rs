@@ -1,6 +1,6 @@
 use anchor_lang::Result;
 
-use crate::{error::MarketError, state::Market};
+use crate::{errors::MarketError, state::Market};
 
 pub fn calculate_lots(market: &Market, base_qty: u64, price: u64) -> Result<(u64, u64)> {
     let base_lots = base_qty / market.base_lot_size;

@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::token::{self, *};
 
 use crate::{
-    error::{MarketError, TraderEntryError},
+    errors::{MarketError, TraderEntryError},
     state::{Market, TraderEntry, TraderState},
 };
 

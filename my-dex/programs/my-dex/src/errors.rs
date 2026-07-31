@@ -167,3 +167,17 @@ pub enum ConsumeEventsError {
     #[msg("Invalid taker quote ATA!")]
     InvalidOwnerQuoteAta,
 }
+
+#[error_code]
+pub enum SettlementError {
+    #[msg("Invalid base token account")]
+    InvalidBaseAta,
+    #[msg("Invalid quote token account")]
+    InvalidQuoteAta,
+    #[msg("No funds available to settle")]
+    NonSettleableEvent,
+    #[msg("Base token account owner mismatch")]
+    InvalidOwnerBaseAta,
+    #[msg("Quote token account owner mismatch")]
+    InvalidOwnerQuoteAta,
+}

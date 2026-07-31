@@ -2,7 +2,7 @@ use std::u32;
 
 use anchor_lang::prelude::*;
 
-use crate::error::{MarketError, OrderError, SlabError, TraderEntryError};
+use crate::errors::{MarketError, OrderError, SlabError, TraderEntryError};
 use crate::state::{FillRecord, Market, OrderStatus, OrderType, TraderEntry};
 
 use crate::state::{Node, Slab};
