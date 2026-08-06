@@ -1,7 +1,8 @@
 node_modules/
 dist/
-.env
+.env*
 .DS_Store
 *.log
 coverage/
 *.tsbuildinfo
+/src/generated/prisma

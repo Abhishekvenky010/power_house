@@ -1,0 +1,76 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Trade {
+  id            String @id @default(uuid())
+  signature     String @unique
+  marketAddress String 
+  price         Decimal @db.Decimal(28,6) 
+  quantity      Decimal  @db.Decimal(28, 9)
+  side          String
+  timestamp     DateTime @default(now())
+  @@index([marketAddress,timestamp])
+}
+
+model Candle {
+  id             String   @id @default(uuid())
+  marketAddress  String
+  resolution     String   // "1m", "5m", "1h", "1d"
+  timestamp      DateTime 
+  open           Decimal  @db.Decimal(28, 9)
+  high           Decimal  @db.Decimal(28, 9)
+  low            Decimal  @db.Decimal(28, 9)
+  close          Decimal  @db.Decimal(28, 9)
+  volume         Decimal  @db.Decimal(28, 9)
+  // Prevents duplicate candles for the same time bucket
+  @@unique([marketAddress, resolution, timestamp])
+}
+
+model Order {
+  id            String   @id @default(uuid())
+  
+  // From OrderPlacedEvent
+  orderId       String   @unique      // u64 → store as String to avoid BigInt issues
+  clientOrderId String               // client_order_id
+  marketAddress String               // market pubkey
+  ownerAddress  String               // owner pubkey
+  side          String               // "bid" or "ask"
+  price         Int  
+  baseLots      Int    // original quantity
+  
+  // Updated by FillEvent
+  filledLots    Int  @default(0)
+  
+  // Updated by OrderCancelledEvent
+  status        OrderStatus   @default(Open)  // "open" | "partial" | "filled" | "cancelled"
+  
+  // Timestamps
+  placedAt      DateTime              // from OrderPlacedEvent.timestamp
+  cancelledAt   DateTime?             // from OrderCancelledEvent.timestamp (nullable)
+  createdAt     DateTime @default(now())
+  settledAt     DateTime?
+
+  @@index([ownerAddress, marketAddress])
+  @@index([marketAddress, status])
+  @@index([orderId])
+}
+
+enum OrderStatus {
+  Open
+  Partial
+  filled
+  Cancelled
+  Settled
+}
