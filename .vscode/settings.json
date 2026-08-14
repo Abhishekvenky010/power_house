@@ -1,0 +1,8 @@
+{
+  "rust-analyzer.linkedProjects": [
+    "my-dex/Cargo.toml"
+  ],
+  "rust-analyzer.cargo.features": [
+    "cpi"
+  ]
+}
