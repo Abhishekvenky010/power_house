@@ -1,12 +1,15 @@
-export type ChartTime = string | number;
-
-// lightweight-charts expects:
-// - business day strings (YYYY-MM-DD) for daily data
-// - unix timestamps in seconds for intraday data
-export function formatTimeForResolution(timestamp: Date, resolution: string): ChartTime {
-  if (resolution === "1d" || resolution === "1w") {
-    return timestamp.toISOString().split("T")[0];
+export function formatTimeForResolution(timestamp: Date | string, resolution: string): string {
+  const d = typeof timestamp === "string" ? new Date(timestamp) : timestamp;
+  switch (resolution) {
+    case "1m":
+      return d.toISOString();
+    case "5m":
+      return d.toISOString();
+    case "1h":
+      return d.toISOString();
+    case "1d":
+      return d.toISOString().split("T")[0] ?? "";
+    default:
+      return d.toISOString();
   }
-
-  return Math.floor(timestamp.getTime() / 1000);
 }

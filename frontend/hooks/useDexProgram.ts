@@ -6,7 +6,7 @@ import idl from "../idl/orderbook.json"
 import { Orderbook } from "../types/orderbook";
 import { useMemo } from "react";
 
-const useDexProgram = () => {
+export const useDexProgram = () => {
     const { connection } = useConnection();
     const wallet = useWallet();
 

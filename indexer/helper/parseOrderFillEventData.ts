@@ -1,31 +1,35 @@
-import {OrderFillEventData} from "../types/events"
+import { FillEvent } from "../types/events";
 
-const parseOrderFillEvent = (event: any): OrderFillEventData | null => {
-    try {
-      const data = event?.data;
-  
-      if (!data) {
-        console.error("parseOrderFillEvent: missing event data");
-        return null;
-      }
-  
-      const side: "bid" | "ask" = data?.side && "bid" in data.side ? "bid" : "ask";
-  
-      return {
-        maker:             data.maker?.toString(),
-        makerOrderId:      data.makerOrderId?.toNumber(),
-        taker:             data.taker?.toString(),
-        takerOrderId:      data.takerOrderId?.toNumber(),
-        side,
-        price:             data.price?.toNumber() / 1000,
-        baseLotsFilled:    data.baseLotsFilled?.toNumber() / 1000,
-        baseLotsRemaining: data.baseLotsRemaining?.toNumber() / 1000,
-        timestamp:         data.timestamp?.toNumber(),
-      };
-    } catch (error) {
-      console.error("parseOrderFillEvent: failed to parse", error);
-      return null;
-    }
+export interface ParsedOrderFill {
+  maker: string;
+  taker: string;
+  side: string;
+  price: number;
+  quantity: number;
+  timestamp: number;
+  signature: string;
+  marketPubkey: string;
+}
+
+export default function parseOrderFillEvent(event: {
+  name: string;
+  data: FillEvent;
+  signature: string;
+}): ParsedOrderFill | null {
+  if (!event?.data) return null;
+
+  const { maker, taker, side, price, baseLotsFilled, timestamp, marketPubkey } = event.data;
+
+  const sideStr = side === "ask" ? "sell" : "buy";
+
+  return {
+    maker: maker.toString(),
+    taker: taker.toString(),
+    side: sideStr,
+    price: price.toNumber(),
+    quantity: baseLotsFilled.toNumber(),
+    timestamp: timestamp.toNumber(),
+    signature: event.signature,
+    marketPubkey: marketPubkey.toString(),
   };
-
-  export default parseOrderFillEvent
+}
