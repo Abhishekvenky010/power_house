@@ -84,6 +84,9 @@ pub fn handler(
     taker_fees_bps: u64,
 ) -> Result<()> {
 
+    msg!("MARKET INIT_SPACE: {}", Market::INIT_SPACE);
+    msg!("SLAB INIT_SPACE: {}", Slab::INIT_SPACE);
+
     let market = &mut ctx.accounts.market;
 
     market.next_order_id = 0;
